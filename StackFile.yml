@@ -1,24 +1,17 @@
 version: "3.8"
 services:
   clickhouse:
-
     image: clickhouse/clickhouse-server:latest
-
     ports:
       - "9000:9000"
-
     environment:
       CLICKHOUSE_USER: "default"
-      CLICKHOUSE_PASSWORD: "" 
-
+      CLICKHOUSE_PASSWORD: ""
     volumes:
       - /clickhouse:/var/lib/clickhouse
-      - 
+
   nginx-logger:
     image: jagadam97/nginx-logger:latest
-    ports:
-      - "9000:9000"
-
     environment:
       BATCH_SIZE: "10"
       BATCH_DELAY: "10"
@@ -27,7 +20,6 @@ services:
       DB_USER: "default"
       DB_PASSWORD: ""
       DB_HOST: "clickhouse"
-      CLICKHOUSE_PASSWORD: "" 
-
+      CLICKHOUSE_PASSWORD: ""
     volumes:
-      - /var/log:/vat/log
+      - /var/log:/var/log # Corrected typo `/vat/log` to `/var/log`
