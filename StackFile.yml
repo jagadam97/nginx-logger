@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  clickhouse:
+
+    image: clickhouse/clickhouse-server:latest
+
+    ports:
+      - "9000:9000"
+
+    environment:
+      CLICKHOUSE_USER: "default"
+      CLICKHOUSE_PASSWORD: "" 
+
+    volumes:
+      - /clickhouse:/var/lib/clickhouse
+      - 
+  nginx-logger:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "9000:9000"
+
+    environment:
+      BATCH_SIZE: "10"
+      BATCH_DELAY: "10"
+      LOG_FILE_PATH: "/var/log/all_proxy_access.log"
+      DB: "default"
+      DB_USER: "default"
+      DB_PASSWORD: ""
+      DB_HOST: "clickhouse"
+      CLICKHOUSE_PASSWORD: "" 
+
+    volumes:
+      - /var/log:/vat/log
