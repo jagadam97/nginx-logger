@@ -22,4 +22,4 @@ services:
       DB_HOST: "clickhouse"
       CLICKHOUSE_PASSWORD: ""
     volumes:
-      - /var/log:/var/log # Corrected typo `/vat/log` to `/var/log`
+      - /npm/data/logs:/var/log
