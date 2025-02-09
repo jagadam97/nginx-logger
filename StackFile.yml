@@ -7,7 +7,7 @@ services:
       - "8123:8123"
     environment:
       CLICKHOUSE_USER: "default"
-      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_PASSWORD: "qwerty123"
     volumes:
       - /clickhouse:/var/lib/clickhouse
 
@@ -19,8 +19,8 @@ services:
       LOG_FILE_PATH: "/var/log/all_proxy_access.log"
       DB: "default"
       DB_USER: "default"
-      DB_PASSWORD: ""
+      DB_PASSWORD: "qwerty123"
       DB_HOST: "clickhouse"
-      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_PASSWORD: "qwerty123"
     volumes:
       - /npm/data/logs:/var/log
