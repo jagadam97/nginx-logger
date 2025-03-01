@@ -6,7 +6,6 @@ import (
 	"github.com/hpcloud/tail"
 )
 
-// TailLogFile reads logs from a file
 func TailLogFile(filePath string) (*tail.Tail, error) {
 	t, err := tail.TailFile(filePath, tail.Config{
 		Follow:   true,
