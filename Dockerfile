@@ -1,13 +1,12 @@
-FROM golang:alpine
+FROM golang:alpine AS builder
 WORKDIR /app
-
 COPY go.mod go.sum ./
-COPY .env ./
-
 RUN go mod download
-
-COPY *.go ./
-
+COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /nginx-logger
 
-CMD ["/nginx-logger"]
+FROM alpine:latest
+WORKDIR /root/
+COPY --from=builder /nginx-logger ./
+COPY .env ./
+CMD ["./nginx-logger"]
