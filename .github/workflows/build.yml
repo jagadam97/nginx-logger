@@ -1,5 +1,3 @@
-
-
 name: Build and push
 on:
   push:
@@ -39,8 +37,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-          jagadam97/nginx-logger:latest
-          jagadam97/nginx-logger:${{ github.sha }}
-          ghcr.io/jagadam97/nginx-logger:latest
-          ghcr.io/jagadam97/nginx-logger:${{ github.sha }}
+            jagadam97/nginx-logger:latest
+            jagadam97/nginx-logger:${{ github.sha }}
+            ghcr.io/jagadam97/nginx-logger:latest
+            ghcr.io/jagadam97/nginx-logger:${{ github.sha }}
 
