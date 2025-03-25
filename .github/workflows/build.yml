@@ -1,6 +1,6 @@
 
 
-name: CI
+name: Build and push
 on:
   push:
     branches: [ "master" ]
@@ -19,6 +19,13 @@ jobs:
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - 
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.TOKEN }}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -31,4 +38,9 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: jagadam97/nginx-logger:latest
+          tags: |
+          jagadam97/nginx-logger:latest
+          jagadam97/nginx-logger:${{ github.sha }}
+          ghcr.io/jagadam97/nginx-logger:latest
+          ghcr.io/jagadam97/nginx-logger:${{ github.sha }}
+
