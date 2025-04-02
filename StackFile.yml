@@ -14,8 +14,8 @@ services:
   nginx-logger:
     image: jagadam97/nginx-logger:latest
     environment:
-      BATCH_SIZE: "10"
-      BATCH_DELAY: "10"
+      BATCH_SIZE: "1000"
+      BATCH_DELAY: "60"
       LOG_FILE_PATH: "/var/log/all_proxy_access.log"
       DB: "default"
       DB_USER: "default"
