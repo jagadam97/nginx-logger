@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/jagadam97/nginx-logger/api"
 	"github.com/jagadam97/nginx-logger/config"
 	"github.com/jagadam97/nginx-logger/database"
 	"github.com/jagadam97/nginx-logger/log"
@@ -13,23 +15,35 @@ import (
 	"github.com/jagadam97/nginx-logger/utils"
 )
 
+var conn clickhouse.Conn
+
 func main() {
 	config.LoadEnv()
 
-	conn, err := database.Connect()
-	if err != nil {
-		fmt.Printf("Database connection failed: %v\n", err)
-		os.Exit(1)
+	var err error
+	for {
+		conn, err = database.Connect()
+		if err == nil {
+			fmt.Println("Database connection successfull")
+			break
+		}
+
+		fmt.Printf("Database connection failed: %v. Retrying...\n", err)
+		time.Sleep(2 * time.Second) // Wait before retrying
 	}
 
 	ctx := context.Background()
 
-	err = database.CheckAndCreateTable(ctx, conn)
-	if err != nil {
+	if err := database.CheckAndCreateTable(ctx, conn); err != nil {
 		fmt.Printf("Error creating table: %v\n", err)
 		os.Exit(1)
 	}
 
+	go startLogListener(ctx)
+	api.StartAPI(conn)
+}
+
+func startLogListener(ctx context.Context) {
 	fmt.Println("Listening for logs...")
 
 	filePath := os.Getenv("LOG_FILE_PATH")
@@ -62,6 +76,7 @@ func main() {
 			if err := database.BatchInsert(ctx, conn, buffer); err != nil {
 				fmt.Printf("Error performing batch insert: %v\n", err)
 			} else {
+				fmt.Printf("Inserted logs: %v in %v\n ", len(buffer), time.Since(timeLastLogFired))
 				buffer = buffer[:0]
 			}
 			timeLastLogFired = time.Now()
