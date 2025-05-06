@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	
 	"github.com/jagadam97/nginx-logger/api"
 	"github.com/jagadam97/nginx-logger/config"
 	"github.com/jagadam97/nginx-logger/database"
