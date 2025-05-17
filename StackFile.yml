@@ -18,11 +18,12 @@ services:
       BATCH_DELAY: "300"
       LOG_FILE_PATH: "/var/log/all_proxy_access.log"
       DB: "default"
+      API_PORT: "8123"
       DB_USER: "default"
       DB_PASSWORD: "qwerty123"
       DB_HOST: "clickhouse"
       CLICKHOUSE_PASSWORD: "qwerty123"
     ports:
-      - "8080:8080"
+      - "8123:8123"
     volumes:
       - /npm/data/logs:/var/log
