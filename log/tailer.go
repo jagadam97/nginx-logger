@@ -8,9 +8,9 @@ import (
 
 func TailLogFile(filePath string) (*tail.Tail, error) {
 	t, err := tail.TailFile(filePath, tail.Config{
-		Follow:   true,
-		ReOpen:   true,
-		Poll:     true,
+		Follow: true,
+		ReOpen: true,
+		Poll:   true,
 		Location: &tail.SeekInfo{Offset: 0, Whence: 2},
 	})
 	if err != nil {

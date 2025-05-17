@@ -6,7 +6,6 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/jagadam97/nginx-logger/models"
-	"github.com/jagadam97/nginx-logger/utils"
 )
 
 func BatchInsert(ctx context.Context, conn driver.Conn, buffer []models.LogEntry) error {
@@ -21,18 +20,18 @@ func BatchInsert(ctx context.Context, conn driver.Conn, buffer []models.LogEntry
 
 	for _, entry := range buffer {
 		err := batch.Append(
-			utils.ConvertTimestamp(entry.TimeLocal),
+			entry.TimeLocal,
 			entry.RemoteAddr,
 			entry.RequestURI,
-			utils.StringToInt(entry.Status),
+			entry.Status,
 			entry.ServerName,
-			utils.StringToFloat(entry.RequestTime),
+			entry.RequestTime,
 			entry.RequestMethod,
-			utils.StringToInt(entry.BytesSent),
+			entry.BytesSent,
 			entry.HTTPHost,
 			entry.ServerProtocol,
 			entry.UpstreamAddr,
-			utils.StringToFloat(entry.UpstreamResponseTime),
+			entry.UpstreamResponseTime,
 			entry.SSLProtocol,
 			entry.SSLCipher,
 			entry.HTTPUserAgent,

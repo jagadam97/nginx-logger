@@ -59,8 +59,8 @@ func startLogListener(ctx context.Context) {
 		os.Exit(1)
 	}
 
-	var buffer []models.LogEntry
 	batchSize := utils.StringToInt(os.Getenv("BATCH_SIZE"))
+	buffer := make([]models.LogEntry, 0, batchSize)
 	batchDelay := utils.StringToInt(os.Getenv("BATCH_DELAY"))
 	timeLastLogFired := time.Now()
 
