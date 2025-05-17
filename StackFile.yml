@@ -22,5 +22,7 @@ services:
       DB_PASSWORD: "qwerty123"
       DB_HOST: "clickhouse"
       CLICKHOUSE_PASSWORD: "qwerty123"
+    ports:
+      - "8080:8080"
     volumes:
       - /npm/data/logs:/var/log
