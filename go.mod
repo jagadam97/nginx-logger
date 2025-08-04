@@ -3,7 +3,7 @@ module github.com/jagadam97/nginx-logger
 go 1.24.2
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.38.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/joho/godotenv v1.5.1
 )
