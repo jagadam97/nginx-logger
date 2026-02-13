@@ -10,7 +10,6 @@ services:
       CLICKHOUSE_PASSWORD: "qwerty123"
     volumes:
       - /clickhouse:/var/lib/clickhouse
-      - /config/clickhouse:/etc/clickhouse-server
 
   nginx-logger:
     image: jagadam97/nginx-logger:latest
