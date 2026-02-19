@@ -12,7 +12,7 @@ services:
       - /clickhouse:/var/lib/clickhouse
 
   nginx-logger:
-    image: jagadam97/nginx-logger:latest
+    image: ghcr.io/jagadam97/nginx-logger:latest
     environment:
       BATCH_SIZE: "1000"
       BATCH_DELAY: "300"
