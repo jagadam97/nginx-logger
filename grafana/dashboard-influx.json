@@ -54,7 +54,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: false)"
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -86,7 +86,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"bytes_sent\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"bytes_sent\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -118,7 +118,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"request_time\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"request_time\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -157,7 +157,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"upstream_response_time\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"upstream_response_time\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
         }
       ],
       "fieldConfig": {
