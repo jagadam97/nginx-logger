@@ -65,9 +65,9 @@ func (i *InfluxClient) BatchInsert(ctx context.Context, buffer []models.LogEntry
 				"ssl_protocol":    e.SSLProtocol,
 				"ssl_cipher":      e.SSLCipher,
 				"status":          fmt.Sprintf("%d", e.Status),
+				"remote_addr":     e.RemoteAddr,
 			},
 			map[string]interface{}{
-				"remote_addr":            e.RemoteAddr,
 				"request_uri":            e.RequestURI,
 				"request_time":           e.RequestTime,
 				"bytes_sent":             int64(e.BytesSent),
