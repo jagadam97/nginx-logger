@@ -359,8 +359,8 @@
         "name": "bucket",
         "label": "Bucket",
         "type": "constant",
-        "query": "nginx_logs",
-        "current": { "selected": false, "text": "nginx_logs", "value": "nginx_logs" },
+        "query": "nginx",
+        "current": { "selected": false, "text": "nginx", "value": "nginx" },
         "hide": 0,
         "skipUrlSync": false
       }
