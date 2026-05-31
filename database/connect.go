@@ -8,6 +8,10 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
+func ClickHouseEnabled() bool {
+	return os.Getenv("DB_HOST") != ""
+}
+
 func Connect() (driver.Conn, error) {
 	ctx := context.Background()
 	conn, err := clickhouse.Open(&clickhouse.Options{

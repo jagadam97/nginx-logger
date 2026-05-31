@@ -8,5 +8,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags "-s -w" -o /nginx-logge
 FROM alpine:latest
 WORKDIR /root/
 COPY --from=builder /nginx-logger ./
-COPY .env ./
 CMD ["./nginx-logger"]

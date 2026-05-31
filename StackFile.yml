@@ -6,23 +6,35 @@ services:
       - "9000:9000"
       - "8123:8123"
     environment:
-      CLICKHOUSE_USER: "default"
-      CLICKHOUSE_PASSWORD: "qwerty123"
+      CLICKHOUSE_USER: "${CLICKHOUSE_USER}"
+      CLICKHOUSE_PASSWORD: "${CLICKHOUSE_PASSWORD}"
     volumes:
       - /clickhouse:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
 
   nginx-logger:
     image: ghcr.io/jagadam97/nginx-logger:latest
+    depends_on:
+      clickhouse:
+        condition: service_healthy
     environment:
-      BATCH_SIZE: "1000"
-      BATCH_DELAY: "300"
-      LOG_FILE_PATH: "/var/log/all_proxy_access.log"
-      DB: "default"
-      API_PORT: "8124"
-      DB_USER: "default"
-      DB_PASSWORD: "qwerty123"
-      DB_HOST: "clickhouse"
-      CLICKHOUSE_PASSWORD: "qwerty123"
+      BATCH_SIZE: "${BATCH_SIZE}"
+      BATCH_DELAY: "${BATCH_DELAY}"
+      LOG_FILE_PATH: "${LOG_FILE_PATH}"
+      API_PORT: "${API_PORT}"
+      DB: "${DB}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_HOST: "${DB_HOST}"
+      INFLUX_URL: "${INFLUX_URL}"
+      INFLUX_TOKEN: "${INFLUX_TOKEN}"
+      INFLUX_ORG: "${INFLUX_ORG}"
+      INFLUX_BUCKET: "${INFLUX_BUCKET}"
     ports:
       - "8124:8124"
     volumes:
