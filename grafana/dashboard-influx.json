@@ -54,7 +54,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: false)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -86,7 +86,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"bytes_sent\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"bytes_sent\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -118,7 +118,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"request_time\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"request_time\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -157,7 +157,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"upstream_response_time\")\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"upstream_response_time\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group()\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
         }
       ],
       "fieldConfig": {
@@ -196,7 +196,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> group(columns: [\"http_host\"])\n  |> count()\n  |> keep(columns: [\"http_host\", \"_value\"])\n  |> rename(columns: {_value: \"volume\"})\n  |> group()\n  |> sort(columns: [\"volume\"], desc: true)\n  |> limit(n: 5)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group(columns: [\"http_host\"])\n  |> count()\n  |> keep(columns: [\"http_host\", \"_value\"])\n  |> rename(columns: {_value: \"volume\"})\n  |> group()\n  |> sort(columns: [\"volume\"], desc: true)\n  |> limit(n: 5)"
         }
       ],
       "fieldConfig": {
@@ -234,7 +234,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> group(columns: [\"remote_addr\"])\n  |> count()\n  |> keep(columns: [\"remote_addr\", \"_value\"])\n  |> rename(columns: {_value: \"volume\"})\n  |> group()\n  |> sort(columns: [\"volume\"], desc: true)\n  |> limit(n: 5)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group(columns: [\"remote_addr\"])\n  |> count()\n  |> keep(columns: [\"remote_addr\", \"_value\"])\n  |> rename(columns: {_value: \"volume\"})\n  |> group()\n  |> sort(columns: [\"volume\"], desc: true)\n  |> limit(n: 5)"
         }
       ],
       "fieldConfig": {
@@ -271,7 +271,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\")\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({ r with\n      level: if r.status_code <= 199 then \"debug\"\n        else if r.status_code <= 299 then \"info\"\n        else if r.status_code <= 399 then \"warning\"\n        else if r.status_code <= 499 then \"error\"\n        else \"critical\",\n      body: string(v: r.http_host) + string(v: r.request_uri) + \" status \" + string(v: r.status_code) + \" from \" + string(v: r.remote_addr)\n    }))\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 1000)"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({ r with\n      level: if r.status_code <= 199 then \"debug\"\n        else if r.status_code <= 299 then \"info\"\n        else if r.status_code <= 399 then \"warning\"\n        else if r.status_code <= 499 then \"error\"\n        else \"critical\",\n      body: string(v: r.http_host) + string(v: r.request_uri) + \" status \" + string(v: r.status_code) + \" from \" + string(v: r.remote_addr)\n    }))\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 1000)"
         }
       ],
       "options": {
@@ -297,7 +297,7 @@
         {
           "refId": "A",
           "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> group(columns: [\"status\"])\n  |> count()\n  |> keep(columns: [\"status\", \"_value\"])\n  |> group()"
+          "query": "from(bucket: \"nginx\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"nginx_logs\" and r._field == \"status_code\")\n  |> filter(fn: (r) => r.http_host =~ /${host:regex}/ and r.status =~ /${status:regex}/)\n  |> group(columns: [\"status\"])\n  |> count()\n  |> keep(columns: [\"status\", \"_value\"])\n  |> group()"
         }
       ],
       "transformations": [
@@ -356,13 +356,34 @@
   "templating": {
     "list": [
       {
-        "name": "bucket",
-        "label": "Bucket",
-        "type": "constant",
-        "query": "nginx",
-        "current": { "selected": false, "text": "nginx", "value": "nginx" },
+        "name": "host",
+        "label": "Website",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"nginx\", tag: \"http_host\")",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
         "hide": 0,
-        "skipUrlSync": false
+        "skipUrlSync": false,
+        "sort": 1
+      },
+      {
+        "name": "status",
+        "label": "Status",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"nginx\", tag: \"status\")",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "hide": 0,
+        "skipUrlSync": false,
+        "sort": 1
       }
     ]
   },
