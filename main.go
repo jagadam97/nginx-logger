@@ -72,8 +72,8 @@ func main() {
 
 	go startLogListener(ctx)
 
-	if chEnabled {
-		api.StartAPI(conn)
+	if influxEnabled {
+		api.StartAPI(influxClient)
 	} else {
 		select {}
 	}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nginx Logger</title>
+<link rel="stylesheet" href="/styles.css">
+<!-- Chart.js as a global (UMD) — used by ChartCanvas.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Vue 3 (no build step) resolved via import map -->
+<script type="importmap">
+{
+  "imports": {
+    "vue": "https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.esm-browser.prod.js"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="app" v-cloak></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

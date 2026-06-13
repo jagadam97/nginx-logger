@@ -2,21 +2,18 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/jagadam97/nginx-logger/database"
 )
 
-func healthcheck(w http.ResponseWriter, _ *http.Request, conn clickhouse.Conn) {
+func healthcheck(w http.ResponseWriter, _ *http.Request, client *database.InfluxClient) {
+	w.Header().Set("Content-Type", "application/json")
 	ctx := context.Background()
-	err := conn.Ping(ctx)
-	if err != nil {
+	if err := client.Ping(ctx); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte(fmt.Sprintf("Unhealthy: Database unreachable (%s)", err.Error())))
+		w.Write([]byte(`{"status":"unhealthy","error":"` + err.Error() + `"}`))
 		return
 	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("Healthy!!"))
+	w.Write([]byte(`{"status":"healthy"}`))
 }
