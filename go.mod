@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.46.0
-	github.com/andybalholm/brotli v1.2.0
+	github.com/andybalholm/brotli v1.2.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 	github.com/joho/godotenv v1.5.1
