@@ -15,4 +15,5 @@ services:
     ports:
       - "${API_PORT:-8124}:${API_PORT:-8124}"
     volumes:
-      - /npm/data/logs:/var/log
+      # NPM's /data/logs on the host. Read-only: the collector only tails.
+      - "${NPM_LOG_DIR:-/npm/data/logs}:/var/log:ro"
