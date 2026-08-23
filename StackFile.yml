@@ -10,6 +10,9 @@ services:
       INFLUX_TOKEN: "${INFLUX_TOKEN}"
       INFLUX_ORG: "${INFLUX_ORG}"
       INFLUX_BUCKET: "${INFLUX_BUCKET}"
+      # nginx stub_status endpoint. Unset = feature off.
+      STUB_STATUS_URL: "${STUB_STATUS_URL}"
+      STUB_INTERVAL: "${STUB_INTERVAL:-10s}"
       # Published port and the port the app binds to are kept in lockstep.
       API_PORT: "${API_PORT:-8124}"
     ports:
@@ -17,3 +20,10 @@ services:
     volumes:
       # NPM's /data/logs on the host. Read-only: the collector only tails.
       - "${NPM_LOG_DIR:-/npm/data/logs}:/var/log:ro"
+    # Join NPM's network so stub_status is reachable by container name.
+    networks:
+      - wg_default
+
+networks:
+  wg_default:
+    external: true

@@ -11,6 +11,7 @@ import (
 	"github.com/jagadam97/nginx-logger/database"
 	"github.com/jagadam97/nginx-logger/log"
 	"github.com/jagadam97/nginx-logger/models"
+	"github.com/jagadam97/nginx-logger/stub"
 	"github.com/jagadam97/nginx-logger/utils"
 )
 
@@ -39,6 +40,7 @@ func main() {
 	defer influxClient.Close()
 
 	go startLogListener(ctx)
+	go startStubScraper(ctx)
 
 	api.StartAPI(influxClient)
 }
@@ -91,4 +93,50 @@ func startLogListener(ctx context.Context) {
 	}
 
 	flush()
+}
+
+// startStubScraper polls nginx's stub_status endpoint on a timer. It is opt-in:
+// with STUB_STATUS_URL unset the collector behaves exactly as before. Scrape and
+// write failures are logged and retried on the next tick — a proxy that is down
+// must not take the log pipeline with it.
+func startStubScraper(ctx context.Context) {
+	url := os.Getenv("STUB_STATUS_URL")
+	if url == "" {
+		return
+	}
+
+	interval := 10 * time.Second
+	if v := os.Getenv("STUB_INTERVAL"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil && d > 0 {
+			interval = d
+		} else {
+			fmt.Printf("Invalid STUB_INTERVAL %q, using %v\n", v, interval)
+		}
+	}
+
+	// Keep the HTTP timeout below the interval so a hung endpoint can't stack up scrapes.
+	timeout := interval / 2
+	if timeout > 5*time.Second {
+		timeout = 5 * time.Second
+	}
+
+	client := stub.NewClient(url, timeout)
+	fmt.Printf("Scraping stub_status at %s every %v\n", url, interval)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		if s, err := client.Fetch(ctx); err != nil {
+			fmt.Printf("stub_status scrape failed: %v\n", err)
+		} else if err := influxClient.WriteStubStatus(ctx, s, time.Now()); err != nil {
+			fmt.Printf("stub_status write failed: %v\n", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

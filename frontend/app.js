@@ -46,6 +46,8 @@ const App = defineComponent({
     });
     const series = ref([]);
     const allLogs = ref([]);
+    // stub_status series; stays empty when the collector runs without STUB_STATUS_URL.
+    const stubSeries = ref([]);
 
     // ---- Log table controls ----
     const uriFilter = ref("");
@@ -102,6 +104,16 @@ const App = defineComponent({
       series.value = await api.timeseries(range, filterArgs.value);
     }
 
+    // Swallows its own errors: stub_status is optional, so a missing or failing
+    // endpoint hides the two panels rather than blanking the whole dashboard.
+    async function loadStub(range) {
+      try {
+        stubSeries.value = await api.stub(range);
+      } catch (e) {
+        stubSeries.value = [];
+      }
+    }
+
     async function loadLogs() {
       const range = currentRange();
       allLogs.value = await api.logs(range, filterArgs.value, limit.value);
@@ -116,10 +128,11 @@ const App = defineComponent({
         customTo.value = toLocalInput(new Date(range.to));
       }
       try {
-        const [, , , h] = await Promise.all([
+        const [, , , , h] = await Promise.all([
           loadStats(range),
           loadTimeSeries(range),
           loadLogs(),
+          loadStub(range),
           api.health(),
         ]);
         healthy.value = h;
@@ -155,6 +168,59 @@ const App = defineComponent({
       reqtime: series.value.map((p) => p.avg_request_time_s * 1000),
       uptime: series.value.map((p) => p.avg_upstream_response_time_s * 1000),
     }));
+
+    // ---- stub_status (proxy-wide; unaffected by the host/status/client filters) ----
+    const stubEnabled = computed(() => stubSeries.value.length > 0);
+
+    const activeConns = computed(() => {
+      const s = stubSeries.value;
+      return s.length ? Math.round(s[s.length - 1].active) : 0;
+    });
+
+    const avgRps = computed(() => {
+      const s = stubSeries.value;
+      if (!s.length) return "0.0";
+      const total = s.reduce((a, p) => a + (p.requests_per_sec || 0), 0);
+      return (total / s.length).toFixed(1);
+    });
+
+    const stubSparks = computed(() => ({
+      active: stubSeries.value.map((p) => p.active),
+      rps: stubSeries.value.map((p) => p.requests_per_sec),
+    }));
+
+    const connChartData = computed(() => {
+      const labels = stubSeries.value.map((p) => fmtTime(p.time));
+      const area = (label, key, color) => ({
+        label,
+        data: stubSeries.value.map((p) => p[key]),
+        borderColor: color,
+        backgroundColor: color + "44",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 1.5,
+      });
+      return {
+        labels,
+        datasets: [
+          area("Waiting", "waiting", "#5b6172"),
+          area("Reading", "reading", "#4fc3f7"),
+          area("Writing", "writing", "#ffb300"),
+        ],
+      };
+    });
+
+    const connChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, padding: 12 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0 } },
+        y: { stacked: true, grid: { color: "#1e2130" }, beginAtZero: true },
+      },
+      interaction: { intersect: false, mode: "index" },
+    };
 
     const tsChartData = computed(() => ({
       labels: series.value.map((p) => fmtTime(p.time)),
@@ -254,6 +320,7 @@ const App = defineComponent({
       healthy, loading, stats, allLogs, uriFilter, limit, presets, filtersOpen,
       setPreset, onCustomChange, isActive, refreshAll, loadLogs,
       dataSent, sparks, tsChartData, tsChartOptions,
+      stubEnabled, activeConns, avgRps, stubSparks, connChartData, connChartOptions,
       statusChartData, statusChartOptions, filteredLogs, displayLogs,
       toastMsg, toastShown,
       fmtNum, fmtMs, fmtTime, statusClass,
@@ -309,6 +376,10 @@ const App = defineComponent({
                 label="mean across requests" :spark="sparks.reqtime" color="#ffb300" />
       <StatCard title="Avg Upstream Time" :value="fmtMs(stats.avg_upstream_response_time_s)" unit="ms"
                 label="mean upstream response" :spark="sparks.uptime" color="#ff7043" />
+      <StatCard v-if="stubEnabled" title="Active Connections" :value="fmtNum(activeConns)"
+                label="current · proxy-wide" :spark="stubSparks.active" color="#ab47bc" />
+      <StatCard v-if="stubEnabled" title="Requests/sec" :value="avgRps"
+                label="mean over range · proxy-wide" :spark="stubSparks.rps" color="#26c6da" />
     </div>
 
     <div class="row split">
@@ -328,6 +399,13 @@ const App = defineComponent({
         <div class="chart-wrap">
           <ChartCanvas type="doughnut" :data="statusChartData" :options="statusChartOptions" />
         </div>
+      </div>
+    </div>
+
+    <div v-if="stubEnabled" class="card">
+      <div class="card-title">Connection States <span class="log-count">proxy-wide · not affected by filters</span></div>
+      <div class="chart-wrap">
+        <ChartCanvas type="line" :data="connChartData" :options="connChartOptions" />
       </div>
     </div>
 

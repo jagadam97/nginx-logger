@@ -26,6 +26,9 @@ func StartAPI(client *database.InfluxClient) {
 	mux.HandleFunc("/api/timeseries", func(w http.ResponseWriter, r *http.Request) {
 		getTimeSeries(w, r, client)
 	})
+	mux.HandleFunc("/api/stub", func(w http.ResponseWriter, r *http.Request) {
+		getStub(w, r, client)
+	})
 
 	// Serve the frontend (single-page dashboard) for all non-/api routes.
 	frontendDir := os.Getenv("FRONTEND_DIR")

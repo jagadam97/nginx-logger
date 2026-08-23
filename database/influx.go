@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -464,11 +465,11 @@ from(bucket: "%s")
 
 // TimeSeriesPoint is one window bucket in a time series query.
 type TimeSeriesPoint struct {
-	Time                 time.Time `json:"time"`
-	Requests             int64     `json:"requests"`
-	BytesSent            int64     `json:"bytes_sent"`
-	AvgRequestTimeS      float64   `json:"avg_request_time_s"`
-	AvgUpstreamTimeS     float64   `json:"avg_upstream_response_time_s"`
+	Time             time.Time `json:"time"`
+	Requests         int64     `json:"requests"`
+	BytesSent        int64     `json:"bytes_sent"`
+	AvgRequestTimeS  float64   `json:"avg_request_time_s"`
+	AvgUpstreamTimeS float64   `json:"avg_upstream_response_time_s"`
 }
 
 // windowPeriod picks a bucket size that avoids spike mountains for the given range.
@@ -532,10 +533,10 @@ from(bucket: "%s")
 
 	// Collect all four series into a map keyed by timestamp.
 	type bucket struct {
-		requests         int64
-		bytesSent        int64
-		avgRequestTime   float64
-		avgUpstreamTime  float64
+		requests        int64
+		bytesSent       int64
+		avgRequestTime  float64
+		avgUpstreamTime float64
 	}
 	buckets := make(map[time.Time]*bucket)
 
@@ -647,4 +648,94 @@ func i64Val(v interface{}) int64 {
 		return int64(n)
 	}
 	return 0
+}
+
+// WriteStubStatus stores one stub_status sample. The measurement carries no
+// tags: stub_status is proxy-wide, so there is no dimension to slice it by.
+func (i *InfluxClient) WriteStubStatus(ctx context.Context, s models.StubStatus, ts time.Time) error {
+	p := influxdb2.NewPoint(
+		"nginx_stub_status",
+		map[string]string{},
+		map[string]interface{}{
+			"active":   s.Active,
+			"reading":  s.Reading,
+			"writing":  s.Writing,
+			"waiting":  s.Waiting,
+			"accepts":  s.Accepts,
+			"handled":  s.Handled,
+			"requests": s.Requests,
+		},
+		ts,
+	)
+	return i.write.WritePoint(ctx, p)
+}
+
+// StubPoint is one window bucket of stub_status data.
+type StubPoint struct {
+	Time           time.Time `json:"time"`
+	Active         float64   `json:"active"`
+	Reading        float64   `json:"reading"`
+	Writing        float64   `json:"writing"`
+	Waiting        float64   `json:"waiting"`
+	RequestsPerSec float64   `json:"requests_per_sec"`
+}
+
+// QueryStubSeries returns window-aggregated stub_status metrics. No tag filter:
+// the measurement has no tags to filter on.
+func (i *InfluxClient) QueryStubSeries(ctx context.Context, from, to time.Time) ([]StubPoint, error) {
+	rangeStr := fmt.Sprintf("start: %s, stop: %s", from.Format(time.RFC3339), to.Format(time.RFC3339))
+	every := windowPeriod(from, to)
+
+	// Gauges: mean over the window.
+	gaugeQuery := func(field string) string {
+		return fmt.Sprintf(`
+from(bucket: "%s")
+  |> range(%s)
+  |> filter(fn: (r) => r._measurement == "nginx_stub_status" and r._field == "%s")
+  |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
+`, i.bucket, rangeStr, field, every)
+	}
+
+	// requests is a monotonic counter, so the rate comes from the delta between
+	// each window's last sample. nonNegative drops the reset that an nginx
+	// restart produces, which would otherwise render as a large negative spike.
+	rateQuery := fmt.Sprintf(`
+from(bucket: "%s")
+  |> range(%s)
+  |> filter(fn: (r) => r._measurement == "nginx_stub_status" and r._field == "requests")
+  |> aggregateWindow(every: %s, fn: last, createEmpty: false)
+  |> derivative(unit: 1s, nonNegative: true)
+`, i.bucket, rangeStr, every)
+
+	buckets := make(map[time.Time]*StubPoint)
+	ensure := func(t time.Time) *StubPoint {
+		if buckets[t] == nil {
+			buckets[t] = &StubPoint{Time: t}
+		}
+		return buckets[t]
+	}
+
+	collect := func(query string, set func(*StubPoint, float64)) {
+		r, err := i.query.Query(ctx, query)
+		if err != nil {
+			return
+		}
+		for r.Next() {
+			set(ensure(r.Record().Time()), f64Val(r.Record().Value()))
+		}
+		r.Close()
+	}
+
+	collect(gaugeQuery("active"), func(p *StubPoint, v float64) { p.Active = v })
+	collect(gaugeQuery("reading"), func(p *StubPoint, v float64) { p.Reading = v })
+	collect(gaugeQuery("writing"), func(p *StubPoint, v float64) { p.Writing = v })
+	collect(gaugeQuery("waiting"), func(p *StubPoint, v float64) { p.Waiting = v })
+	collect(rateQuery, func(p *StubPoint, v float64) { p.RequestsPerSec = v })
+
+	points := make([]StubPoint, 0, len(buckets))
+	for _, p := range buckets {
+		points = append(points, *p)
+	}
+	sort.Slice(points, func(a, b int) bool { return points[a].Time.Before(points[b].Time) })
+	return points, nil
 }

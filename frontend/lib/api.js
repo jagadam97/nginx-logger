@@ -51,5 +51,7 @@ export const api = {
   health: () => fetch(BASE + "/health").then((r) => r.ok).catch(() => false),
   stats: (range, f) => getJSON(`/stats?${buildQuery(range, f)}`),
   timeseries: (range, f) => getJSON(`/timeseries?${buildQuery(range, f)}`),
+  // stub_status is proxy-wide, so it takes the range but no tag filters.
+  stub: (range) => getJSON(`/stub?${buildQuery(range)}`),
   logs: (range, f, limit) => getJSON(`/logs?${buildQuery(range, f, { limit })}`),
 };

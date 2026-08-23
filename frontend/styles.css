@@ -207,11 +207,10 @@ main {
 }
 
 .row { display: grid; gap: 18px; }
-.row.stats { grid-template-columns: repeat(4, 1fr); }
+.row.stats { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .row.split { grid-template-columns: 1fr 1fr; }
 
 @media (max-width: 1000px) {
-  .row.stats { grid-template-columns: repeat(2, 1fr); }
   .row.split { grid-template-columns: 1fr; }
 }
 
