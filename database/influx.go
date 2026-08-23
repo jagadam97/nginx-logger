@@ -46,8 +46,10 @@ type LogRecord struct {
 type Stats struct {
 	TotalRequests            int64            `json:"total_requests"`
 	DataSentBytes            int64            `json:"data_sent_bytes"`
-	AvgRequestTimeS          float64          `json:"avg_request_time_s"`
-	AvgUpstreamResponseTimeS float64          `json:"avg_upstream_response_time_s"`
+	P50RequestTimeS          float64          `json:"p50_request_time_s"`
+	P95RequestTimeS          float64          `json:"p95_request_time_s"`
+	P50UpstreamResponseTimeS float64          `json:"p50_upstream_response_time_s"`
+	P95UpstreamResponseTimeS float64          `json:"p95_upstream_response_time_s"`
 	ByStatusCode             map[string]int64 `json:"by_status_code"`
 	TopHosts                 []TagCount       `json:"top_hosts"`
 	TopIPs                   []TagCount       `json:"top_ips"`
@@ -350,23 +352,19 @@ from(bucket: "%s")
   |> sum()
 `, i.bucket, rangeStr, tagFilter)
 
-	// Panel 7: Avg Request Time — mean of request_time field
-	avgRTQuery := fmt.Sprintf(`
+	// Panels 7/8: latency percentiles rather than means. $request_time for a
+	// WebSocket upgrade is the whole connection lifetime, so a handful of
+	// long-lived connections (status 101) drags a mean into the thousands of
+	// seconds. Quantiles are unmoved by a few extreme values.
+	quantileQuery := func(field string, q float64) string {
+		return fmt.Sprintf(`
 from(bucket: "%s")
   |> range(%s)
-  |> filter(fn: (r) => r._measurement == "nginx_logs" and r._field == "request_time")
+  |> filter(fn: (r) => r._measurement == "nginx_logs" and r._field == "%s")
 %s  |> group()
-  |> mean()
-`, i.bucket, rangeStr, tagFilter)
-
-	// Panel 8: Avg Upstream Response Time — mean of upstream_response_time field
-	avgUpstreamQuery := fmt.Sprintf(`
-from(bucket: "%s")
-  |> range(%s)
-  |> filter(fn: (r) => r._measurement == "nginx_logs" and r._field == "upstream_response_time")
-%s  |> group()
-  |> mean()
-`, i.bucket, rangeStr, tagFilter)
+  |> quantile(q: %g, method: "estimate_tdigest")
+`, i.bucket, rangeStr, field, tagFilter, q)
+	}
 
 	// Panel 3: HTTP Status Codes — count per exact status code tag
 	byStatusQuery := fmt.Sprintf(`
@@ -418,18 +416,21 @@ from(bucket: "%s")
 		r.Close()
 	}
 
-	if r, err := i.query.Query(ctx, avgRTQuery); err == nil {
-		if r.Next() {
-			stats.AvgRequestTimeS = f64Val(r.Record().Value())
+	for _, p := range []struct {
+		query string
+		dst   *float64
+	}{
+		{quantileQuery("request_time", 0.5), &stats.P50RequestTimeS},
+		{quantileQuery("request_time", 0.95), &stats.P95RequestTimeS},
+		{quantileQuery("upstream_response_time", 0.5), &stats.P50UpstreamResponseTimeS},
+		{quantileQuery("upstream_response_time", 0.95), &stats.P95UpstreamResponseTimeS},
+	} {
+		if r, err := i.query.Query(ctx, p.query); err == nil {
+			if r.Next() {
+				*p.dst = f64Val(r.Record().Value())
+			}
+			r.Close()
 		}
-		r.Close()
-	}
-
-	if r, err := i.query.Query(ctx, avgUpstreamQuery); err == nil {
-		if r.Next() {
-			stats.AvgUpstreamResponseTimeS = f64Val(r.Record().Value())
-		}
-		r.Close()
 	}
 
 	if r, err := i.query.Query(ctx, byStatusQuery); err == nil {
@@ -468,8 +469,8 @@ type TimeSeriesPoint struct {
 	Time             time.Time `json:"time"`
 	Requests         int64     `json:"requests"`
 	BytesSent        int64     `json:"bytes_sent"`
-	AvgRequestTimeS  float64   `json:"avg_request_time_s"`
-	AvgUpstreamTimeS float64   `json:"avg_upstream_response_time_s"`
+	P50RequestTimeS  float64   `json:"p50_request_time_s"`
+	P50UpstreamTimeS float64   `json:"p50_upstream_response_time_s"`
 }
 
 // windowPeriod picks a bucket size that avoids spike mountains for the given range.
@@ -513,12 +514,13 @@ from(bucket: "%s")
   |> fill(value: 0)
 `, i.bucket, rangeStr, tagFilter, every)
 
+	// median, not mean — see the note in QueryStats about WebSocket lifetimes.
 	rtQuery := fmt.Sprintf(`
 from(bucket: "%s")
   |> range(%s)
   |> filter(fn: (r) => r._measurement == "nginx_logs" and r._field == "request_time")
 %s  |> group()
-  |> aggregateWindow(every: %s, fn: mean, createEmpty: true)
+  |> aggregateWindow(every: %s, fn: median, createEmpty: true)
   |> fill(value: 0.0)
 `, i.bucket, rangeStr, tagFilter, every)
 
@@ -527,7 +529,7 @@ from(bucket: "%s")
   |> range(%s)
   |> filter(fn: (r) => r._measurement == "nginx_logs" and r._field == "upstream_response_time")
 %s  |> group()
-  |> aggregateWindow(every: %s, fn: mean, createEmpty: true)
+  |> aggregateWindow(every: %s, fn: median, createEmpty: true)
   |> fill(value: 0.0)
 `, i.bucket, rangeStr, tagFilter, every)
 
@@ -535,8 +537,8 @@ from(bucket: "%s")
 	type bucket struct {
 		requests        int64
 		bytesSent       int64
-		avgRequestTime  float64
-		avgUpstreamTime float64
+		p50RequestTime  float64
+		p50UpstreamTime float64
 	}
 	buckets := make(map[time.Time]*bucket)
 
@@ -561,13 +563,13 @@ from(bucket: "%s")
 	}
 	if r, err := i.query.Query(ctx, rtQuery); err == nil {
 		for r.Next() {
-			ensure(r.Record().Time()).avgRequestTime = f64Val(r.Record().Value())
+			ensure(r.Record().Time()).p50RequestTime = f64Val(r.Record().Value())
 		}
 		r.Close()
 	}
 	if r, err := i.query.Query(ctx, upstreamQuery); err == nil {
 		for r.Next() {
-			ensure(r.Record().Time()).avgUpstreamTime = f64Val(r.Record().Value())
+			ensure(r.Record().Time()).p50UpstreamTime = f64Val(r.Record().Value())
 		}
 		r.Close()
 	}
@@ -578,8 +580,8 @@ from(bucket: "%s")
 			Time:             t,
 			Requests:         b.requests,
 			BytesSent:        b.bytesSent,
-			AvgRequestTimeS:  b.avgRequestTime,
-			AvgUpstreamTimeS: b.avgUpstreamTime,
+			P50RequestTimeS:  b.p50RequestTime,
+			P50UpstreamTimeS: b.p50UpstreamTime,
 		})
 	}
 	// Sort ascending by time.

@@ -38,8 +38,10 @@ const App = defineComponent({
     const stats = reactive({
       total_requests: 0,
       data_sent_bytes: 0,
-      avg_request_time_s: 0,
-      avg_upstream_response_time_s: 0,
+      p50_request_time_s: 0,
+      p95_request_time_s: 0,
+      p50_upstream_response_time_s: 0,
+      p95_upstream_response_time_s: 0,
       by_status_code: {},
       top_hosts: [],
       top_ips: [],
@@ -92,8 +94,10 @@ const App = defineComponent({
       Object.assign(stats, {
         total_requests: s.total_requests || 0,
         data_sent_bytes: s.data_sent_bytes || 0,
-        avg_request_time_s: s.avg_request_time_s || 0,
-        avg_upstream_response_time_s: s.avg_upstream_response_time_s || 0,
+        p50_request_time_s: s.p50_request_time_s || 0,
+        p95_request_time_s: s.p95_request_time_s || 0,
+        p50_upstream_response_time_s: s.p50_upstream_response_time_s || 0,
+        p95_upstream_response_time_s: s.p95_upstream_response_time_s || 0,
         by_status_code: s.by_status_code || {},
         top_hosts: s.top_hosts || [],
         top_ips: s.top_ips || [],
@@ -165,8 +169,8 @@ const App = defineComponent({
     const sparks = computed(() => ({
       requests: series.value.map((p) => p.requests),
       bytes: series.value.map((p) => p.bytes_sent),
-      reqtime: series.value.map((p) => p.avg_request_time_s * 1000),
-      uptime: series.value.map((p) => p.avg_upstream_response_time_s * 1000),
+      reqtime: series.value.map((p) => p.p50_request_time_s * 1000),
+      uptime: series.value.map((p) => p.p50_upstream_response_time_s * 1000),
     }));
 
     // ---- stub_status (proxy-wide; unaffected by the host/status/client filters) ----
@@ -372,10 +376,12 @@ const App = defineComponent({
                 label="in selected range" :spark="sparks.requests" color="#4fc3f7" />
       <StatCard title="Data Sent" :value="dataSent.val" :unit="dataSent.unit"
                 label="total response bytes" :spark="sparks.bytes" color="#4caf50" />
-      <StatCard title="Avg Request Time" :value="fmtMs(stats.avg_request_time_s)" unit="ms"
-                label="mean across requests" :spark="sparks.reqtime" color="#ffb300" />
-      <StatCard title="Avg Upstream Time" :value="fmtMs(stats.avg_upstream_response_time_s)" unit="ms"
-                label="mean upstream response" :spark="sparks.uptime" color="#ff7043" />
+      <StatCard title="Request Time" :value="fmtMs(stats.p50_request_time_s)" unit="ms"
+                :label="'median · p95 ' + fmtMs(stats.p95_request_time_s) + 'ms'"
+                :spark="sparks.reqtime" color="#ffb300" />
+      <StatCard title="Upstream Time" :value="fmtMs(stats.p50_upstream_response_time_s)" unit="ms"
+                :label="'median · p95 ' + fmtMs(stats.p95_upstream_response_time_s) + 'ms'"
+                :spark="sparks.uptime" color="#ff7043" />
       <StatCard v-if="stubEnabled" title="Active Connections" :value="fmtNum(activeConns)"
                 label="current · proxy-wide" :spark="stubSparks.active" color="#ab47bc" />
       <StatCard v-if="stubEnabled" title="Requests/sec" :value="avgRps"
